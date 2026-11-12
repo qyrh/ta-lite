@@ -20,6 +20,7 @@
   <nav class="tabs" aria-label="功能">
     <button class="tab active" data-tab="exam"><span class="ti">▤</span>试卷</button>
     <button class="tab" data-tab="lesson"><span class="ti">✎</span>教案</button>
+    <button class="tab" data-tab="plan"><span class="ti">▦</span>计划</button>
     <button class="tab" data-tab="feedback"><span class="ti">✉</span>反馈</button>
     <button class="tab" data-tab="settings"><span class="ti">⚙</span>设置</button>
   </nav>
@@ -182,6 +183,49 @@
     <div class="card mt16">
       <div class="card-head"><h3>草稿</h3><span class="hint">只存在本浏览器，不上传</span></div>
       <div id="lessonDrafts" class="draft-list empty">还没有草稿</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 计划 ═══════════════ -->
+  <section id="tab-plan" class="tab-panel">
+    <div class="page-head">
+      <div>
+        <h2>进度表 → 学习计划</h2>
+        <p class="muted">把已有进度表/上到哪了/还剩多少课时贴进来，生成可执行的阶段计划；不建学生档案。</p>
+      </div>
+      <div class="head-actions">
+        <button id="btnPlanDemo" class="btn ghost small">填入示例</button>
+        <button id="btnPlanClear" class="btn ghost small danger-text">清空</button>
+      </div>
+    </div>
+    <div class="grid plan-grid">
+      <div class="card">
+        <div class="card-head"><h3>① 已知信息</h3><span class="hint">不知道的留空，用默认或标【待补】</span></div>
+        <div class="form-grid two">
+          <label>学生（临时）<input id="plStudent" placeholder="可留空"></label>
+          <label>年级<input id="plGrade" placeholder="如：六年级"></label>
+          <label>科目<input id="plSubject" value="数学"></label>
+          <label>可用课时<input id="plWeeks" placeholder="如：12 次课 / 每周 1 次"></label>
+          <label>开始日期<input id="plStart" type="date"></label>
+          <label>目标<input id="plTarget" placeholder="如：期末 85+ / 补完圆与比例"></label>
+          <label class="span2">已有进度表 / 上到哪了（可粘贴表格）<textarea id="plProgress" class="editor" rows="10" placeholder="例如：&#10;第1次 圆的认识 已完成&#10;第2次 圆的周长 已完成&#10;第3次 圆的面积 讲到例2&#10;…"></textarea></label>
+        </div>
+        <div class="row gap wrap mt12">
+          <button id="btnPlanGen" class="btn primary">生成计划</button>
+          <button id="btnPlanLocal" class="btn">本地模板</button>
+          <span id="planHint" class="muted small">生成后可按周调整</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>② 计划内容</h3><div class="seg"><button class="seg-btn active" data-preview="plan">排版</button><button class="seg-btn" data-preview="plan">Markdown</button></div></div>
+        <textarea id="planOut" class="editor tall" rows="24" placeholder="计划会出现在这里，也可以直接手写。"></textarea>
+        <div id="planPreview" class="preview tall empty">计划预览</div>
+        <div class="row gap wrap mt12">
+          <button id="btnPlanDocx" class="btn primary">导出计划 .docx</button>
+          <button id="btnPlanCopy" class="btn ghost">复制</button>
+          <button id="btnPlanPrint" class="btn ghost">打印 / 存 PDF</button>
+        </div>
+      </div>
     </div>
   </section>
 

@@ -1,0 +1,13 @@
+name = "ta-lite-proxy"
+main = "index.js"
+compatibility_date = "2026-11-01"
+
+# 可选：部署后把 * 改成你的静态站域名，例如 "https://yourname.github.io"
+# 注意：改成具体域名时，GitHub Pages 的预览域名/自定义域名都要列；多个源可自己改成逻辑。
+[vars]
+ALLOWED_ORIGIN = "*"
+
+# Secret（不要写进本文件）：
+#   npx wrangler secret put ACCESS_TOKEN       # 团队访问口令，发给同事
+#   npx wrangler secret put DEEPSEEK_API_KEY   # DeepSeek Key
+#   npx wrangler secret put GLM_API_KEY        # 可选，智谱 GLM Key

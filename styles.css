@@ -142,11 +142,13 @@ main { max-width: 1380px; margin: 0 auto; padding: 26px 26px 70px; }
   .tab { padding: 8px 10px; white-space: nowrap; }
 }
 @media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; gap: 8px 12px; padding: 10px 14px 8px; }
+  .brand { flex: 1 1 100%; min-width: 0; }
   .brand-text h1 { font-size: 15px; }
   .logo { width: 34px; height: 34px; }
   .ai-status { display: none; }
   .top-actions { display: none; }
-  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs { order: 3; flex: 1 1 100%; margin-top: 2px; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab { padding: 7px 9px; font-size: 12.5px; }
   .page-head { flex-direction: column; }
@@ -342,6 +344,8 @@ tr.q-wrong td { background: color-mix(in srgb, var(--danger-soft) 60%, var(--sur
 .mode-seg .seg-btn { flex: 1; padding: 7px 10px; }
 .plain-list { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 12.5px; }
 .plain-list li { margin: 4px 0; }
+details summary { cursor: pointer; font-weight: 600; color: var(--brand); font-size: 12.5px; margin: 8px 0; }
+details summary:hover { color: var(--brand-2); }
 code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-family: var(--mono); font-size: .92em; }
 
 /* ── Toast / 遮罩 ── */

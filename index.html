@@ -314,7 +314,7 @@
             <label class="span2">API Key<input id="cfgKey" type="password" autocomplete="off" placeholder="sk-...（只存本浏览器）"></label>
             <label class="span2">识图模型（试卷识别用）<input id="cfgVisionModel" placeholder="deepseek-flash / glm-4.6v-flash"></label>
           </div>
-          <p class="muted small">DeepSeek 的 Key 在 platform.deepseek.com 申请；GLM 在 open.bigmodel.cn。浏览器会直接请求官方接口，本站不中转。</p>
+          <p class="muted small">DeepSeek 的 Key 在 <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">platform.deepseek.com</a> 申请；GLM 在 open.bigmodel.cn。浏览器会直接请求官方接口，本站不中转。</p>
         </div>
         <div id="proxyBox" hidden>
           <div class="form-grid two mt12">
@@ -362,7 +362,17 @@
       <div class="card">
         <div class="card-head"><h3>关于</h3></div>
         <p class="muted small">教学助手 · 轻量网页版 v1.0。为“不依赖某一位老师的电脑”而做：可放 GitHub Pages、任意静态空间，或直接本地打开。</p>
-        <p class="muted small">功能：试卷识别/分析、教案（新授/复习/试听）、反馈模板与提示词、成绩表分析、Word 导出。学生信息只做临时字段，不建档案。</p>
+        <p class="muted small">功能：试卷识别/分析、教案（新授/复习/试听）、进度表→计划、反馈模板与提示词、成绩表分析、Word 导出。学生信息只做临时字段，不建档案。</p>
+        <details class="mt12">
+          <summary>第一次用怎么配？</summary>
+          <ol class="plain-list">
+            <li>打开「设置 → AI 接入」。</li>
+            <li>有团队代理：选「团队代理」，填代理地址和访问口令（找部署的同事要）。</li>
+            <li>没有代理：选「每人自己的 Key」，填自己的 DeepSeek Key，模型用 <code>deepseek-flash</code>。</li>
+            <li>点「保存设置」→「测试连接」；显示正常即可用。</li>
+            <li>Key 只保存在本浏览器；换电脑/换浏览器要重填。</li>
+          </ol>
+        </details>
       </div>
     </div>
   </section>

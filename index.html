@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; font-src 'self' data:; frame-src 'self'; base-uri 'self'; form-action 'self'">
+<title>教学助手 · 轻量版</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='serif'%3E教%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">教</div>
+    <div class="brand-text">
+      <h1>教学助手 <span>轻量版</span></h1>
+      <p>试卷收集 · 教案/试听课 · 反馈模板</p>
+    </div>
+  </div>
+  <nav class="tabs" aria-label="功能">
+    <button class="tab active" data-tab="exam"><span class="ti">▤</span>试卷</button>
+    <button class="tab" data-tab="lesson"><span class="ti">✎</span>教案</button>
+    <button class="tab" data-tab="feedback"><span class="ti">✉</span>反馈</button>
+    <button class="tab" data-tab="settings"><span class="ti">⚙</span>设置</button>
+  </nav>
+  <div class="top-actions">
+    <span id="aiStatus" class="ai-status" title="AI 连接状态">未配置 AI</span>
+    <button id="btnQuickConfig" class="btn ghost small">配置</button>
+  </div>
+</header>
+
+<main>
+  <!-- ═══════════════ 试卷 ═══════════════ -->
+  <section id="tab-exam" class="tab-panel active">
+    <div class="page-head">
+      <div>
+        <h2>试卷收集与试卷分析</h2>
+        <p class="muted">拍照/截图/PDF 丢进来，AI 逐题识别得分与错因；学生信息可临时填，不建档案。</p>
+      </div>
+      <div class="head-actions">
+        <button id="btnExamDemo" class="btn ghost small">填入示例</button>
+        <button id="btnExamClear" class="btn ghost small danger-text">清空</button>
+      </div>
+    </div>
+
+    <div class="grid exam-grid">
+      <div class="card">
+        <div class="card-head"><h3>① 上传试卷</h3><span class="hint">图片 / PDF，最多 10 页</span></div>
+        <div id="examDrop" class="dropzone" tabindex="0">
+          <div class="drop-ico">＋</div>
+          <div class="drop-title">拖入试卷图片或 PDF</div>
+          <div class="drop-sub">也可以点击选择文件；图片会自动压缩，原文不上传到任何网站</div>
+          <input id="examFile" type="file" accept="image/*,application/pdf" multiple hidden>
+        </div>
+        <div id="examFiles" class="file-list"></div>
+        <div class="row gap wrap mt12">
+          <button id="btnExamExtract" class="btn primary" disabled>开始识别</button>
+          <button id="btnExamStop" class="btn ghost" hidden>停止</button>
+          <span id="examExtractHint" class="muted small">先添加试卷，再点识别</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>② 本次信息</h3><span class="hint">都可留空，默认用“同学 / 本次测试”</span></div>
+        <div class="form-grid two">
+          <label>学生姓名<input id="exStudent" placeholder="如：小明（可留空）"></label>
+          <label>年级<input id="exGrade" placeholder="如：六年级"></label>
+          <label>试卷名称<input id="exName" placeholder="如：圆的面积单元测"></label>
+          <label>日期<input id="exDate" type="date"></label>
+          <label>满分<input id="exFull" type="number" min="0" step="0.5" placeholder="如：100"></label>
+          <label>科目<input id="exSubject" placeholder="数学"></label>
+        </div>
+        <div class="divider"></div>
+        <div id="examStats" class="stats empty">识别后这里显示得分与错题统计</div>
+      </div>
+    </div>
+
+    <div class="card mt16" id="examResultCard">
+      <div class="card-head">
+        <h3>③ 逐题结果</h3>
+        <div class="head-actions">
+          <button id="btnExamAddRow" class="btn ghost small">＋ 加一题</button>
+          <button id="btnExamAnalyze" class="btn primary small" disabled>AI 分析</button>
+        </div>
+      </div>
+      <div class="table-hint">手机端可左右滑动表格，查看/编辑全部列。</div>
+      <div id="examTableWrap" class="table-wrap empty-state">
+        <div class="empty-ico">▤</div>
+        <p>识别后，每道题会出现在这里；所有格子都可以直接改。</p>
+      </div>
+      <div class="divider"></div>
+      <div class="analysis-stack">
+        <div>
+          <div class="card-head compact"><h3>分析报告</h3><span class="hint">可手动改，导出时按这里的内容走</span></div>
+          <textarea id="examAnalysis" class="editor" rows="12" placeholder="点“AI 分析”生成，或自己写。建议包含：总体判断 / 得分结构 / 错因归类 / 重点补漏 / 下节课建议 / 家长版三句话。"></textarea>
+        </div>
+        <div>
+          <div class="card-head compact"><h3>预览</h3><div class="seg"><button class="seg-btn active" data-preview="exam">排版</button><button class="seg-btn" data-preview="exam">原文</button></div></div>
+          <div id="examPreview" class="preview empty">分析内容会在这里排版显示</div>
+        </div>
+      </div>
+      <div class="row gap wrap mt12">
+        <button id="btnExamDocx" class="btn primary">导出试卷分析报告 .docx</button>
+        <button id="btnExamErrDocx" class="btn ghost">导出错题清单 .docx</button>
+        <button id="btnExamCopy" class="btn ghost">复制分析文字</button>
+        <button id="btnExamPrint" class="btn ghost">打印 / 存 PDF</button>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <div class="card-head"><h3>成绩表快速分析</h3><span class="hint">没有试卷图片时，直接粘分数也能出分析</span></div>
+      <div class="grid two-col">
+        <div>
+          <textarea id="scoreInput" class="editor" rows="8" placeholder="每行一个分数，例如：&#10;92&#10;85&#10;78&#10;…&#10;也可以粘贴 CSV：姓名,分数"></textarea>
+          <div class="row gap wrap mt12">
+            <label class="inline">满分<input id="scoreFull" type="number" value="100" min="1" style="width:90px"></label>
+            <button id="btnScoreCalc" class="btn">统计</button>
+            <button id="btnScoreAnalyze" class="btn primary">AI 分析</button>
+            <button id="btnScoreDocx" class="btn ghost">导出 .docx</button>
+          </div>
+          <div id="scoreStats" class="stats empty mt12">粘贴分数后点“统计”</div>
+        </div>
+        <div>
+          <div id="scoreAnalysis" class="preview empty">AI 分析或本地统计结论会显示在这里</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 教案 ═══════════════ -->
+  <section id="tab-lesson" class="tab-panel">
+    <div class="page-head">
+      <div>
+        <h2>教案制作（含试听课）</h2>
+        <p class="muted">填课题和课型，AI 出完整教案；试听课走“破冰—探测—体验—转化”专用结构。</p>
+      </div>
+      <div class="head-actions">
+        <button id="btnLessonDemo" class="btn ghost small">填入示例</button>
+        <button id="btnLessonClear" class="btn ghost small danger-text">清空</button>
+      </div>
+    </div>
+
+    <div class="grid lesson-grid">
+      <div class="card">
+        <div class="card-head"><h3>① 课题信息</h3><span class="hint">不知道的留空，AI 会用默认或标【待补】</span></div>
+        <div class="chips" id="lessonKindChips">
+          <button class="chip active" data-kind="new">新授课</button>
+          <button class="chip" data-kind="review">复习课</button>
+          <button class="chip" data-kind="trial">试听课</button>
+        </div>
+        <div class="form-grid two">
+          <label>学段<select id="lsStage"><option>小学</option><option>初中</option><option>高中</option></select></label>
+          <label>年级<input id="lsGrade" placeholder="如：六年级"></label>
+          <label>科目<input id="lsSubject" value="数学"></label>
+          <label>教材版本<input id="lsBook" placeholder="如：苏教版 / 人教版"></label>
+          <label class="span2">课题<input id="lsTopic" placeholder="如：圆的面积：割补与容斥"></label>
+          <label>课时时长<input id="lsDuration" placeholder="如：60 分钟"></label>
+          <label>学生姓名（临时）<input id="lsStudent" placeholder="可留空"></label>
+          <label class="span2">学生情况 / 家长诉求（可选）<textarea id="lsSituation" rows="3" placeholder="如：基础一般，计算容易错；家长想看到提分路径。留空则 AI 不编造。"></textarea></label>
+          <label class="span2">老师补充要求（可选）<textarea id="lsExtra" rows="2" placeholder="如：要多设计一道变式；要留 10 分钟当堂检测。"></textarea></label>
+        </div>
+        <div class="row gap wrap mt12">
+          <button id="btnLessonGen" class="btn primary">生成教案</button>
+          <button id="btnLessonStop" class="btn ghost" hidden>停止</button>
+          <span id="lessonHint" class="muted small">生成后可逐段修改</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>② 教案内容</h3><div class="seg"><button class="seg-btn active" data-preview="lesson">排版</button><button class="seg-btn" data-preview="lesson">Markdown</button></div></div>
+        <textarea id="lessonOut" class="editor tall" rows="24" placeholder="生成的教案会出现在这里；也可以直接手写。"></textarea>
+        <div id="lessonPreview" class="preview tall empty">教案预览</div>
+        <div class="row gap wrap mt12">
+          <button id="btnLessonDocx" class="btn primary">导出教案 .docx</button>
+          <button id="btnLessonCopy" class="btn ghost">复制</button>
+          <button id="btnLessonPrint" class="btn ghost">打印 / 存 PDF</button>
+          <button id="btnLessonSave" class="btn ghost">存为草稿</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <div class="card-head"><h3>草稿</h3><span class="hint">只存在本浏览器，不上传</span></div>
+      <div id="lessonDrafts" class="draft-list empty">还没有草稿</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 反馈 ═══════════════ -->
+  <section id="tab-feedback" class="tab-panel">
+    <div class="page-head">
+      <div>
+        <h2>反馈模板与提示词</h2>
+        <p class="muted">选模板、填事实，AI 写成能直接发给家长的话；也可以不调 AI，直接套模板。</p>
+      </div>
+      <div class="head-actions">
+        <button id="btnFbDemo" class="btn ghost small">填入示例</button>
+        <button id="btnFbClear" class="btn ghost small danger-text">清空</button>
+      </div>
+    </div>
+
+    <div class="grid feedback-grid">
+      <div class="card">
+        <div class="card-head"><h3>① 模板</h3><button id="btnFbNewTpl" class="btn ghost small">＋ 新建</button></div>
+        <div id="fbTemplateList" class="tpl-list"></div>
+        <div class="divider"></div>
+        <label class="block">模板正文（可用占位符 {学生} {课题} {表现} {问题} {下一步} {家长诉求}）</label>
+        <textarea id="fbTemplateBody" class="editor" rows="8"></textarea>
+        <div class="row gap wrap mt8">
+          <button id="btnFbSaveTpl" class="btn small">保存模板</button>
+          <button id="btnFbDelTpl" class="btn ghost small danger-text">删除</button>
+          <span class="muted small">模板只存本浏览器</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>② 本次事实</h3><span class="hint">不知道的留空，AI 不会编</span></div>
+        <div class="form-grid two">
+          <label>学生<input id="fbStudent" placeholder="如：小明"></label>
+          <label>课题 / 场景<input id="fbTopic" placeholder="如：圆的面积第 2 次课"></label>
+          <label class="span2">表现 / 进步<textarea id="fbGood" rows="2" placeholder="如：这次计算全对；能自己画图解释。"></textarea></label>
+          <label class="span2">问题 / 需要加强<textarea id="fbBad" rows="2" placeholder="如：单位换算还会漏；审题急。"></textarea></label>
+          <label class="span2">下一步 / 家长配合<textarea id="fbNext" rows="2" placeholder="如：每天 3 道单位换算；下次课做综合题。"></textarea></label>
+          <label class="span2">家长诉求 / 语气<textarea id="fbAsk" rows="2" placeholder="如：家长关心提分；语气温和、具体，不夸张。"></textarea></label>
+        </div>
+        <div class="row gap wrap mt12">
+          <button id="btnFbGen" class="btn primary">AI 生成反馈</button>
+          <button id="btnFbFill" class="btn">直接套模板</button>
+          <span id="fbHint" class="muted small">先生成，再复制</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <div class="card-head"><h3>③ 成品</h3><div class="seg"><button class="seg-btn active" data-preview="fb">排版</button><button class="seg-btn" data-preview="fb">原文</button></div></div>
+      <textarea id="fbOut" class="editor" rows="10" placeholder="反馈文字会出现在这里，可直接改。"></textarea>
+      <div id="fbPreview" class="preview empty">预览</div>
+      <div class="row gap wrap mt12">
+        <button id="btnFbCopy" class="btn primary">复制反馈</button>
+        <button id="btnFbDocx" class="btn ghost">导出 .docx</button>
+        <button id="btnFbPrint" class="btn ghost">打印 / 存 PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 设置 ═══════════════ -->
+  <section id="tab-settings" class="tab-panel">
+    <div class="page-head">
+      <div>
+        <h2>设置</h2>
+        <p class="muted">Key 只保存在本浏览器；如果是多人共用电脑，建议用无痕窗口或定期清理。</p>
+      </div>
+    </div>
+
+    <div class="grid settings-grid">
+      <div class="card">
+        <div class="card-head"><h3>AI 接入</h3><span id="cfgState" class="hint">未配置</span></div>
+        <div class="seg mode-seg">
+          <button class="seg-btn active" data-mode="direct">每人自己的 Key</button>
+          <button class="seg-btn" data-mode="proxy">团队代理</button>
+        </div>
+        <div id="directBox">
+          <div class="form-grid two mt12">
+            <label>供应商
+              <select id="cfgProvider">
+                <option value="deepseek">DeepSeek</option>
+                <option value="glm">智谱 GLM</option>
+              </select>
+            </label>
+            <label>模型<input id="cfgModel" placeholder="deepseek-flash"></label>
+            <label class="span2">API Key<input id="cfgKey" type="password" autocomplete="off" placeholder="sk-...（只存本浏览器）"></label>
+            <label class="span2">识图模型（试卷识别用）<input id="cfgVisionModel" placeholder="deepseek-flash / glm-4.6v-flash"></label>
+          </div>
+          <p class="muted small">DeepSeek 的 Key 在 platform.deepseek.com 申请；GLM 在 open.bigmodel.cn。浏览器会直接请求官方接口，本站不中转。</p>
+        </div>
+        <div id="proxyBox" hidden>
+          <div class="form-grid two mt12">
+            <label class="span2">代理地址<input id="cfgProxyUrl" placeholder="https://ta-proxy.你的账号.workers.dev"></label>
+            <label class="span2">访问口令<input id="cfgProxyToken" type="password" autocomplete="off" placeholder="团队口令，由部署者设置"></label>
+            <label class="span2">代理供应商
+              <select id="cfgProxyProvider">
+                <option value="deepseek">DeepSeek（推荐）</option>
+                <option value="glm">智谱 GLM</option>
+              </select>
+            </label>
+            <label>模型<input id="cfgProxyModel" placeholder="deepseek-flash"></label>
+            <label>识图模型<input id="cfgProxyVisionModel" placeholder="deepseek-flash"></label>
+          </div>
+          <p class="muted small">代理模式下浏览器不保存任何 API Key；Worker 里用 Secret 保存。部署见同目录 <code>worker/README.md</code>。</p>
+        </div>
+        <div class="row gap wrap mt12">
+          <button id="btnCfgSave" class="btn primary">保存设置</button>
+          <button id="btnCfgTest" class="btn">测试连接</button>
+          <span id="cfgTestMsg" class="muted small"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>本机数据</h3><span class="hint">全部在浏览器 localStorage</span></div>
+        <div class="form-grid">
+          <label>老师姓名<input id="cfgTeacher" placeholder="用于署名，可留空"></label>
+        </div>
+        <div class="row gap wrap mt12">
+          <button id="btnDataExport" class="btn">导出数据 JSON</button>
+          <button id="btnDataImport" class="btn ghost">导入数据</button>
+          <input id="dataImportFile" type="file" accept="application/json" hidden>
+          <button id="btnDataClear" class="btn ghost danger-text">清空本机数据</button>
+        </div>
+        <div class="divider"></div>
+        <h4>安全说明</h4>
+        <ul class="plain-list">
+          <li>本站是纯静态页面：没有服务器保存你的试卷/学生信息，文件只在当前浏览器里处理。</li>
+          <li>直接 Key 模式：Key 仅存于本浏览器 localStorage，请求直连 DeepSeek/GLM 官方接口。</li>
+          <li>团队代理模式：浏览器只拿访问口令；真实 Key 在 Cloudflare Worker 的 Secret 里，不会下发。</li>
+          <li>不要把 Key 写进公开仓库、截图或群聊；同事离职/共用电脑时清理浏览器数据。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>关于</h3></div>
+        <p class="muted small">教学助手 · 轻量网页版 v1.0。为“不依赖某一位老师的电脑”而做：可放 GitHub Pages、任意静态空间，或直接本地打开。</p>
+        <p class="muted small">功能：试卷识别/分析、教案（新授/复习/试听）、反馈模板与提示词、成绩表分析、Word 导出。学生信息只做临时字段，不建档案。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<div id="overlay" class="overlay" hidden>
+  <div class="overlay-card">
+    <div class="spinner"></div>
+    <h3 id="ovTitle">处理中…</h3>
+    <p id="ovText" class="muted"></p>
+    <button id="ovCancel" class="btn ghost small" hidden>取消</button>
+  </div>
+</div>
+
+<script src="vendor/jszip.min.js"></script>
+<script src="lib/markdown.js"></script>
+<script src="lib/docx.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

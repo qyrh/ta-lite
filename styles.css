@@ -127,12 +127,13 @@ main { max-width: 1380px; margin: 0 auto; padding: 26px 26px 70px; }
 .grid { display: grid; gap: 16px; }
 .exam-grid { grid-template-columns: 1.1fr .9fr; }
 .lesson-grid { grid-template-columns: .92fr 1.08fr; }
+.plan-grid { grid-template-columns: .94fr 1.06fr; }
 .feedback-grid { grid-template-columns: .92fr 1.08fr; }
 .settings-grid { grid-template-columns: 1fr 1fr; }
 .two-col { grid-template-columns: 1fr 1fr; }
 .analysis-stack { display: grid; gap: 12px; }
 @media (max-width: 1000px) {
-  .exam-grid, .lesson-grid, .feedback-grid, .settings-grid, .two-col { grid-template-columns: 1fr; }
+  .exam-grid, .lesson-grid, .plan-grid, .feedback-grid, .settings-grid, .two-col { grid-template-columns: 1fr; }
   .brand-text p { display: none; }
   .topbar { gap: 12px; padding: 10px 14px; }
   .brand { min-width: 0; }

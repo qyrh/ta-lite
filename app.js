@@ -1868,7 +1868,10 @@ function hydrate() {
 
   fillSettings();
   renderPreview('exam'); renderPreview('lesson'); renderPreview('plan'); renderPreview('fb');
-  setPreview('exam', 'md'); setPreview('lesson', 'md'); setPreview('plan', 'md'); setPreview('fb', 'md');
+  setPreview('exam', state.exam.analysis ? 'html' : 'md');
+  setPreview('lesson', state.lesson.out ? 'html' : 'md');
+  setPreview('plan', state.plan.out ? 'html' : 'md');
+  setPreview('fb', state.feedback.out ? 'html' : 'md');
   updateExamButtons();
   updateAiStatus();
   switchTab(state.lastTab || 'exam');

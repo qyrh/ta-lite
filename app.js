@@ -87,6 +87,7 @@ function defaultState() {
     lastTab: 'exam',
     exam: { student: '', grade: '', name: '', date: today(), full: '', subject: '数学', questions: [], analysis: '' },
     lesson: { kind: 'new', stage: '小学', grade: '', subject: '数学', book: '', topic: '', duration: '', student: '', situation: '', extra: '', out: '' },
+    plan: { student: '', grade: '', subject: '数学', weeks: '', start: today(), target: '', progress: '', out: '' },
     feedback: { templateId: 'tpl-after', student: '', topic: '', good: '', bad: '', next: '', ask: '', out: '' },
   };
 }
@@ -114,6 +115,16 @@ function syncStateNow() {
   state.exam.subject = $('exSubject').value.trim();
   state.exam.analysis = $('examAnalysis').value;
   state.lesson = Object.assign(lessonFields(), { out: $('lessonOut').value });
+  state.plan = {
+    student: $('plStudent').value.trim(),
+    grade: $('plGrade').value.trim(),
+    subject: $('plSubject').value.trim(),
+    weeks: $('plWeeks').value.trim(),
+    start: $('plStart').value || today(),
+    target: $('plTarget').value.trim(),
+    progress: $('plProgress').value,
+    out: $('planOut').value,
+  };
   state.feedback = Object.assign({}, state.feedback, {
     student: $('fbStudent').value.trim(),
     topic: $('fbTopic').value.trim(),
@@ -135,7 +146,11 @@ function loadState() {
     state.settings = Object.assign({}, DEFAULT_SETTINGS, j.settings || {});
     if (!Array.isArray(state.templates) || !state.templates.length) state.templates = BUILTIN_TEMPLATES.map((t) => Object.assign({}, t));
     if (!Array.isArray(state.drafts)) state.drafts = [];
+    state.exam = Object.assign(defaultState().exam, state.exam || {});
     state.exam.questions = Array.isArray(state.exam.questions) ? state.exam.questions : [];
+    state.plan = Object.assign(defaultState().plan, state.plan || {});
+    state.lesson = Object.assign(defaultState().lesson, state.lesson || {});
+    state.feedback = Object.assign(defaultState().feedback, state.feedback || {});
   } catch (e) { console.warn('读取本地数据失败', e); }
 }
 
@@ -173,6 +188,7 @@ function setPreview(kind, mode) {
   const pairs = {
     exam: [$('examAnalysis'), $('examPreview')],
     lesson: [$('lessonOut'), $('lessonPreview')],
+    plan: [$('planOut'), $('planPreview')],
     fb: [$('fbOut'), $('fbPreview')],
   };
   const pair = pairs[kind];
@@ -194,6 +210,10 @@ function renderPreview(kind) {
     const md = $('lessonOut').value.trim();
     $('lessonPreview').innerHTML = md ? window.TAMD.render(md) : '<span class="muted">教案预览</span>';
     $('lessonPreview').classList.toggle('empty', !md);
+  } else if (kind === 'plan') {
+    const md = $('planOut').value.trim();
+    $('planPreview').innerHTML = md ? window.TAMD.render(md) : '<span class="muted">计划预览</span>';
+    $('planPreview').classList.toggle('empty', !md);
   } else if (kind === 'fb') {
     const md = $('fbOut').value.trim();
     $('fbPreview').innerHTML = md ? window.TAMD.render(md) : '<span class="muted">预览</span>';
@@ -1193,6 +1213,145 @@ function renderDrafts() {
   };
 }
 
+/* ══════════════ 进度表 → 计划 ══════════════ */
+function planFields() {
+  return {
+    student: $('plStudent').value.trim(),
+    grade: $('plGrade').value.trim(),
+    subject: $('plSubject').value.trim() || '数学',
+    weeks: $('plWeeks').value.trim(),
+    start: $('plStart').value || today(),
+    target: $('plTarget').value.trim(),
+    progress: $('plProgress').value.trim(),
+  };
+}
+function planPrompt(f) {
+  return [
+    '你是教研老师。请根据下面的已有进度和目标，制定一份可执行的学习计划。用 Markdown，不要输出 JSON。',
+    '【已知信息】',
+    '学生（临时）：' + (f.student || '未填写'),
+    '年级：' + (f.grade || '未填写'),
+    '科目：' + f.subject,
+    '可用课时：' + (f.weeks || '未填写'),
+    '开始日期：' + f.start,
+    '目标：' + (f.target || '未填写'),
+    '【已有进度表 / 上到哪了】',
+    f.progress,
+    '【要求】',
+    '1. 结构：## 现状判断 / ## 目标拆解 / ## 阶段安排（表格：周次、内容、目标、检测）/ ## 前四次课安排（每次写清讲什么、练什么、检测什么）/ ## 检测与调整 / ## 家长沟通要点 / ## 需要补充。',
+    '2. 只根据进度表说话；不知道的用【待补】，不要编造学校考试时间、排名、分数。',
+    '3. 阶段安排要能落地：每次课有明确产出，每个阶段有检测。',
+    '4. 如果进度表里有“讲到例2/未完成”，要先把未完成部分补完再开新内容。',
+    '5. 不要提“AI”“模型”。',
+  ].join('\n');
+}
+function localPlan(f) {
+  const p = f.progress || '【待补：把已有进度表或上到哪了贴进来】';
+  return [
+    '## 现状判断',
+    '- 年级/科目：' + (f.grade || '【待补】') + ' ' + f.subject,
+    '- 已有进度：',
+    p.split(/\r?\n/).filter(Boolean).map((x) => '- ' + x).join('\n') || '- 【待补】',
+    '- 可用课时：' + (f.weeks || '【待补】'),
+    '- 目标：' + (f.target || '【待补】'),
+    '',
+    '## 目标拆解',
+    '1. 先补完进度表里“讲到但没完成”的部分。',
+    '2. 按“概念—例题—变式—检测”过一轮。',
+    '3. 用 2 次课做综合检测，按结果调整下一阶段。',
+    '',
+    '## 阶段安排',
+    '| 周次 | 内容 | 目标 | 检测 |',
+    '|---|---|---|---|',
+    '| 第 1 阶段 | 补完未完成内容 + 基础概念 | 能独立复述概念、做基础题 | 3 道基础题 |',
+    '| 第 2 阶段 | 典型题 + 变式 | 会做中档题，能说清步骤 | 2 道中档题 |',
+    '| 第 3 阶段 | 综合题 + 易错点 | 能识别陷阱、检查单位 | 1 套小测 |',
+    '| 第 4 阶段 | 检测与回炉 | 稳定在目标区间 | 综合卷 + 错题重做 |',
+    '',
+    '## 前四次课安排',
+    '1. 第 1 次：补完进度表未完成部分；讲 1 道主例题；作业 3 题。',
+    '2. 第 2 次：同型题 + 1 道变式；当堂检测 2 题。',
+    '3. 第 3 次：易错点专项；错题重做；作业分层。',
+    '4. 第 4 次：小测 + 讲评；调整下一阶段。',
+    '',
+    '## 检测与调整',
+    '- 每次课末 2 题当堂检测；连续两次不达标，退回上一阶段。',
+    '- 每阶段结束做一次 20 分钟小测，记录错因，不只看分数。',
+    '',
+    '## 家长沟通要点',
+    '1. 目前进度：' + (f.progress ? '已按进度表梳理' : '【待补】') + '。',
+    '2. 接下来先补什么、为什么先补这个。',
+    '3. 家里只需要配合一件具体的事（例如每天 3 道计算/读题圈单位）。',
+    '',
+    '## 需要补充',
+    '1. 学校最近一次考试/单元测的时间与范围',
+    '2. 每周可保证的作业时间',
+    '3. 家长最在意的一个点',
+    '4. 是否有学校发的复习资料',
+  ].join('\n');
+}
+async function generatePlan(useAI) {
+  const f = planFields();
+  if (!f.progress) return toast('先把已有进度表或“上到哪了”贴进来', 'bad');
+  if (!useAI || !aiConfigured()) {
+    $('planOut').value = localPlan(f);
+    renderPreview('plan'); setPreview('plan', 'html');
+    syncStateNow();
+    toast(useAI ? '未配置 AI，已生成本地模板' : '已生成本地模板，可逐条修改', '', 3500);
+    return;
+  }
+  showOverlay('生成计划中…', '正在按进度表和目标排阶段', true);
+  const ctrl = new AbortController(); overlayAbort = ctrl;
+  try {
+    const text = await callAI({
+      messages: [
+        { role: 'system', content: '你是教研老师，排的计划要能直接执行，不写空话。' },
+        { role: 'user', content: planPrompt(f) },
+      ],
+      model: state.settings.model,
+      maxTokens: 8192,
+      temperature: 0.45,
+      timeout: 240000,
+      signal: ctrl.signal,
+    });
+    $('planOut').value = text.trim();
+    renderPreview('plan'); setPreview('plan', 'html');
+    syncStateNow();
+    toast('计划已生成，可按周调整', 'ok');
+  } catch (e) {
+    if (e && e.name === 'AbortError') toast('已停止', '', 2000);
+    else toast('生成失败：' + (e && e.message || e), 'bad', 6000);
+  } finally { hideOverlay(); }
+}
+async function exportPlanDocx() {
+  const f = planFields();
+  const md = $('planOut').value.trim();
+  if (!md) return toast('还没有计划内容', 'bad');
+  try {
+    const blob = await window.TADocx.fromMarkdown({
+      title: '学习计划',
+      subtitle: (f.student || '同学') + (f.target ? (' · ' + f.target) : ''),
+      meta: ['年级：' + (f.grade || '未填写') + '　科目：' + f.subject + '　可用课时：' + (f.weeks || '未填写'), '开始日期：' + f.start],
+      md: md,
+    });
+    window.TADocx.download('学习计划_' + window.TADocx.safeName(f.student || '同学') + '_' + today() + '.docx', blob);
+    toast('已导出计划', 'ok');
+  } catch (e) { toast('导出失败：' + (e && e.message || e), 'bad', 5000); }
+}
+function planDemo() {
+  $('plStudent').value = '示例同学';
+  $('plGrade').value = '六年级';
+  $('plSubject').value = '数学';
+  $('plWeeks').value = '12 次课（每周 1 次）';
+  $('plStart').value = today();
+  $('plTarget').value = '期末 85+，补完圆与比例';
+  $('plProgress').value = '第1次 圆的认识 已完成\n第2次 圆的周长 已完成\n第3次 圆的面积 讲到例2\n第4次 圆环面积 未开始\n第5次 比例的意义 未开始';
+  $('planOut').value = localPlan(planFields());
+  renderPreview('plan'); setPreview('plan', 'html');
+  syncStateNow();
+  toast('已填入示例', 'ok');
+}
+
 /* ══════════════ 反馈 ══════════════ */
 function currentTemplate() {
   return state.templates.find((t) => t.id === state.feedback.templateId) || state.templates[0];
@@ -1567,6 +1726,28 @@ function bind() {
   };
   $('lessonOut').addEventListener('input', debounce(() => { renderPreview('lesson'); saveState(); }, 200));
 
+  // plan
+  $('btnPlanGen').onclick = () => generatePlan(true);
+  $('btnPlanLocal').onclick = () => generatePlan(false);
+  $('btnPlanDocx').onclick = exportPlanDocx;
+  $('btnPlanCopy').onclick = async () => {
+    const t = $('planOut').value.trim();
+    if (!t) return toast('还没有计划', 'bad');
+    try { await navigator.clipboard.writeText(t); toast('已复制', 'ok'); } catch (_) { toast('复制失败', 'bad'); }
+  };
+  $('btnPlanPrint').onclick = () => printHtml('学习计划', window.TAMD.render($('planOut').value.trim() || ''));
+  $('btnPlanDemo').onclick = planDemo;
+  $('btnPlanClear').onclick = () => {
+    if (!confirm('清空当前计划表单和内容？')) return;
+    ['plStudent', 'plGrade', 'plWeeks', 'plTarget', 'plProgress'].forEach((id) => { $(id).value = ''; });
+    $('plSubject').value = '数学';
+    $('plStart').value = today();
+    $('planOut').value = '';
+    renderPreview('plan');
+    syncStateNow();
+  };
+  $('planOut').addEventListener('input', debounce(() => { renderPreview('plan'); saveState(); }, 200));
+
   // feedback
   $('btnFbGen').onclick = generateFeedback;
   $('btnFbFill').onclick = () => { $('fbOut').value = fillTemplateText(); renderPreview('fb'); setPreview('fb', 'html'); syncStateNow(); };
@@ -1665,6 +1846,15 @@ function hydrate() {
   $('lessonOut').value = state.lesson.out || '';
   renderDrafts();
 
+  $('plStudent').value = state.plan.student || '';
+  $('plGrade').value = state.plan.grade || '';
+  $('plSubject').value = state.plan.subject || '数学';
+  $('plWeeks').value = state.plan.weeks || '';
+  $('plStart').value = state.plan.start || today();
+  $('plTarget').value = state.plan.target || '';
+  $('plProgress').value = state.plan.progress || '';
+  $('planOut').value = state.plan.out || '';
+
   $('fbStudent').value = state.feedback.student || '';
   $('fbTopic').value = state.feedback.topic || '';
   $('fbGood').value = state.feedback.good || '';
@@ -1677,8 +1867,8 @@ function hydrate() {
   if (t) $('fbTemplateBody').value = t.body;
 
   fillSettings();
-  renderPreview('exam'); renderPreview('lesson'); renderPreview('fb');
-  setPreview('exam', 'md'); setPreview('lesson', 'md'); setPreview('fb', 'md');
+  renderPreview('exam'); renderPreview('lesson'); renderPreview('plan'); renderPreview('fb');
+  setPreview('exam', 'md'); setPreview('lesson', 'md'); setPreview('plan', 'md'); setPreview('fb', 'md');
   updateExamButtons();
   updateAiStatus();
   switchTab(state.lastTab || 'exam');
@@ -1704,6 +1894,8 @@ try {
     localExamAnalysis: localExamAnalysis,
     localLesson: localLesson,
     lessonFields: lessonFields,
+    planFields: planFields,
+    localPlan: localPlan,
     scoreStats: scoreStats,
     parseScores: parseScores,
   };

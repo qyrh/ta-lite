@@ -16,7 +16,7 @@
 ### A. 本地打开（最快验证）
 
 ```powershell
-cd web-lite
+cd ta-lite                                   # 本仓库克隆到本地后的目录
 python -m http.server 8899 --bind 127.0.0.1
 ```
 
@@ -26,7 +26,7 @@ python -m http.server 8899 --bind 127.0.0.1
 ### B. GitHub Pages（推荐给同事）
 
 1. 在 GitHub 新建一个仓库（public 即可；页面里没有任何 Key）。
-2. 把 `web-lite/` 里的全部文件上传到仓库根目录（或 `docs/`）。
+2. 把本仓库根目录下的全部文件（`index.html`、`app.js`、`styles.css`、`lib/`、`vendor/`）上传到你的仓库根目录（或 `docs/`）。
 3. 仓库 Settings → Pages → Source 选 `Deploy from a branch`，分支 `main`，目录 `/ (root)`。
 4. 等 1 分钟，访问 `https://你的用户名.github.io/仓库名/`。
 
@@ -37,7 +37,7 @@ python -m http.server 8899 --bind 127.0.0.1
 如果希望“所有同事共用一个 Key、但浏览器拿不到 Key”，部署同目录的 `worker/` 到 Cloudflare Workers（免费）：
 
 ```powershell
-cd web-lite/worker
+cd ta-lite/worker
 npx wrangler login
 npx wrangler deploy
 npx wrangler secret put ACCESS_TOKEN
@@ -95,7 +95,7 @@ npx wrangler secret put DEEPSEEK_API_KEY
 ## 文件结构
 
 ```
-web-lite/
+ta-lite/                # 仓库根目录
   index.html            页面骨架
   styles.css            样式（浅色/深色、响应式、打印）
   app.js                全部业务逻辑（无构建步骤）

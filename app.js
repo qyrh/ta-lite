@@ -94,17 +94,26 @@ function defaultState() {
 
 let state = defaultState();
 let saveTimer = null;
+function writeStateNow() {
+  saveTimer = null;
+  try {
+    const copy = JSON.parse(JSON.stringify(state));
+    // 不持久化正在识别的图片；试卷只存结果
+    localStorage.setItem(LS_KEY, JSON.stringify(copy));
+  } catch (e) {
+    console.warn('保存失败', e);
+  }
+}
 function saveState() {
   if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try {
-      const copy = JSON.parse(JSON.stringify(state));
-      // 不持久化正在识别的图片；试卷只存结果
-      localStorage.setItem(LS_KEY, JSON.stringify(copy));
-    } catch (e) {
-      console.warn('保存失败', e);
-    }
-  }, 250);
+  saveTimer = setTimeout(writeStateNow, 250);
+}
+/* 页面即将隐藏 / 关闭：立即同步表单并落盘。
+   输入同步(250ms) 与 写盘(250ms) 都是防抖的，不冲刷的话“输完最后一个字马上关页 /
+   点完保存设置马上关页”会丢掉最后一段输入或刚保存的 Key。 */
+function flushNow() {
+  try { syncStateNow(); } catch (_) {}
+  if (saveTimer) { clearTimeout(saveTimer); writeStateNow(); }
 }
 function syncStateNow() {
   state.exam.student = $('exStudent').value.trim();
@@ -1880,6 +1889,9 @@ function hydrate() {
 function bindPersistence() {
   // 所有表单在输入时同步到 state（轻量、够用）
   document.addEventListener('input', debounce(syncStateNow, 250));
+  // 关页 / 切到后台前冲刷未落盘的内容（移动端切 App 只触发 visibilitychange，不触发 beforeunload）
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
+  window.addEventListener('pagehide', flushNow);
 }
 
 loadState();

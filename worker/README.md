@@ -12,7 +12,7 @@
 ## 2. 部署
 
 ```powershell
-cd web-lite/worker
+cd ta-lite/worker
 
 npx wrangler login
 npx wrangler deploy
